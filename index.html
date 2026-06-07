@@ -3,89 +3,483 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marshellis - Building Small Projects & Fun Apps</title>
-    <meta name="description" content="Marshellis is a family-run business creating small projects and fun apps of all sorts. Try our daily puzzle games!">
+    <title>Marshellis — Small Projects & Fun Apps, made by a family</title>
+    <meta name="description" content="Marshellis is a family-run studio crafting small projects and fun apps — built with care, a love of detail, and a healthy obsession with delight. Try our daily puzzle games.">
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'inter': ['Inter', 'system-ui', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Marshellis — Small Projects & Fun Apps">
+    <meta property="og:description" content="A family-run studio crafting small projects and fun apps. Try our daily puzzle games.">
+    <meta property="og:url" content="https://marshellis.com">
+    <meta name="theme-color" content="#FBF6EC">
 
-    <!-- Google Fonts -->
+    <!-- Emoji favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
+
+    <!-- Fonts: Fraunces (display) + Hanken Grotesk (body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <style>
+        :root {
+            --paper:    #FBF6EC;
+            --paper-2:  #F3EAD7;
+            --card:     #FFFDF7;
+            --ink:      #17130D;
+            --ink-soft: #5A5142;
+            --coral:    #FF5A36;
+            --sun:      #FFC23C;
+            --teal:     #149C77;
+            --blue:     #2E54F0;
+            --lilac:    #B7A4EE;
+            --line:     #17130D;
+
+            --shadow:   6px 6px 0 var(--ink);
+            --shadow-lg: 10px 10px 0 var(--ink);
+            --maxw: 1180px;
+            --ease: cubic-bezier(.2, .8, .2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+        body {
+            font-family: 'Hanken Grotesk', system-ui, sans-serif;
+            color: var(--ink);
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(23,19,13,.05) 1px, transparent 1px);
+            background-size: 26px 26px;
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Grain overlay */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            pointer-events: none;
+            opacity: .045;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        ::selection { background: var(--sun); color: var(--ink); }
+
+        a { color: inherit; text-decoration: none; }
+
+        h1, h2, h3 {
+            font-family: 'Fraunces', Georgia, serif;
+            font-weight: 600;
+            line-height: 1.02;
+            letter-spacing: -0.01em;
+            font-optical-sizing: auto;
+        }
+
+        .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 clamp(20px, 5vw, 56px); }
+
+        /* ---------- Header ---------- */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            transition: background .35s var(--ease), box-shadow .35s var(--ease), border-color .35s var(--ease);
+            border-bottom: 2px solid transparent;
+        }
+        header.scrolled {
+            background: rgba(251,246,236,.82);
+            backdrop-filter: saturate(1.4) blur(10px);
+            -webkit-backdrop-filter: saturate(1.4) blur(10px);
+            border-bottom-color: var(--ink);
+        }
+        .nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+        .brand {
+            font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.55rem;
+            letter-spacing: -.02em; display: inline-flex; align-items: center; gap: .5ch;
+        }
+        .brand .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--coral); display: inline-block; transition: transform .4s var(--ease); }
+        .brand:hover .dot { transform: scale(1.5) rotate(20deg); }
+        .nav-links { display: flex; align-items: center; gap: clamp(14px, 2.5vw, 34px); }
+        .nav-links .lnk { font-weight: 600; font-size: .95rem; position: relative; padding: 4px 0; }
+        .nav-links .lnk::after {
+            content: ""; position: absolute; left: 0; bottom: -2px; height: 2px; width: 0; background: var(--coral);
+            transition: width .3s var(--ease);
+        }
+        .nav-links .lnk:hover::after { width: 100%; }
+        .hide-sm { }
+
+        /* ---------- Buttons ---------- */
+        .btn {
+            display: inline-flex; align-items: center; gap: .6ch;
+            font-family: 'Hanken Grotesk', sans-serif; font-weight: 700; font-size: 1.02rem;
+            padding: 14px 24px; border: 2px solid var(--ink); border-radius: 14px;
+            background: var(--card); color: var(--ink);
+            box-shadow: var(--shadow); cursor: pointer;
+            transition: transform .15s var(--ease), box-shadow .15s var(--ease), background .2s var(--ease);
+            white-space: nowrap;
+        }
+        .btn:hover { transform: translate(-2px,-2px); box-shadow: var(--shadow-lg); }
+        .btn:active { transform: translate(3px,3px); box-shadow: 2px 2px 0 var(--ink); }
+        .btn .arrow { transition: transform .25s var(--ease); }
+        .btn:hover .arrow { transform: translateX(4px); }
+        .btn-primary { background: var(--coral); color: #fff; }
+        .btn-mini { padding: 9px 16px; font-size: .9rem; border-radius: 11px; box-shadow: 3px 3px 0 var(--ink); }
+        .btn-mini:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--ink); }
+
+        /* ---------- Hero ---------- */
+        .hero { position: relative; padding: clamp(48px, 9vw, 110px) 0 clamp(40px, 7vw, 80px); }
+        .hero-blobs { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .5; }
+        .blob.b1 { width: 420px; height: 420px; background: var(--sun);  top: -120px; right: -60px; }
+        .blob.b2 { width: 360px; height: 360px; background: var(--lilac); bottom: -120px; left: -80px; opacity: .42; }
+        .blob.b3 { width: 280px; height: 280px; background: var(--teal);  top: 40%; right: 18%; opacity: .22; }
+
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: .6ch;
+            font-weight: 700; font-size: .82rem; letter-spacing: .14em; text-transform: uppercase;
+            color: var(--ink); background: var(--card); border: 2px solid var(--ink);
+            padding: 7px 14px; border-radius: 100px; box-shadow: 3px 3px 0 var(--ink);
+        }
+        .eyebrow .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 0 rgba(20,156,119,.6); animation: pulse 2.4s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(20,156,119,.5); } 70% { box-shadow: 0 0 0 10px rgba(20,156,119,0); } 100% { box-shadow: 0 0 0 0 rgba(20,156,119,0); } }
+
+        h1.title {
+            font-size: clamp(2.9rem, 9vw, 6.4rem);
+            font-weight: 600;
+            margin: 26px 0 0;
+            max-width: 16ch;
+            letter-spacing: -.025em;
+        }
+        h1.title .hl { position: relative; color: var(--coral); font-style: italic; font-weight: 500; white-space: nowrap; }
+        h1.title .squiggle { position: absolute; left: 0; right: 0; bottom: -.16em; width: 100%; height: .22em; overflow: visible; }
+        h1.title .squiggle path { fill: none; stroke: var(--coral); stroke-width: 7; stroke-linecap: round; stroke-dasharray: 600; stroke-dashoffset: 600; animation: draw 1.1s var(--ease) .7s forwards; }
+        @keyframes draw { to { stroke-dashoffset: 0; } }
+
+        .lede { font-size: clamp(1.06rem, 1.9vw, 1.32rem); color: var(--ink-soft); max-width: 52ch; margin: 28px 0 0; }
+        .hero-cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 36px; }
+
+        /* word reveal on load */
+        .reveal-word { display: inline-block; opacity: 0; transform: translateY(120%); animation: rise .9s var(--ease) forwards; }
+        .title .reveal-word { animation-delay: calc(var(--i) * .09s + .15s); }
+        @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+        .fade-up { opacity: 0; transform: translateY(20px); animation: fadeUp .8s var(--ease) forwards; }
+        .d1 { animation-delay: .15s; } .d2 { animation-delay: .75s; } .d3 { animation-delay: .9s; } .d4 { animation-delay: 1.05s; }
+        @keyframes fadeUp { to { opacity: 1; transform: none; } }
+
+        /* Rotating sticker */
+        .sticker { position: absolute; width: clamp(96px, 13vw, 150px); height: clamp(96px, 13vw, 150px); top: clamp(20px, 4vw, 56px); right: clamp(8px, 5vw, 40px); z-index: 2; }
+        .sticker .ring { animation: spin 18s linear infinite; transform-origin: 100px 100px; }
+        .sticker text { font-family: 'Hanken Grotesk', sans-serif; font-size: 13.2px; font-weight: 700; letter-spacing: .06em; fill: var(--ink); text-transform: uppercase; }
+        .sticker .center { font-size: 40px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Floating shapes */
+        .shape { position: absolute; z-index: -1; will-change: transform; }
+        .shape.s1 { top: 24%;  left: 4%;  animation: floatA 9s ease-in-out infinite; }
+        .shape.s2 { top: 64%;  left: 12%; animation: floatB 11s ease-in-out infinite; }
+        .shape.s3 { top: 18%;  right: 8%; animation: floatB 8s ease-in-out infinite; }
+        .shape.s4 { bottom: 8%; right: 22%; animation: floatA 10s ease-in-out infinite; }
+        @keyframes floatA { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-22px) rotate(8deg); } }
+        @keyframes floatB { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(20px) rotate(-10deg); } }
+
+        /* ---------- Marquee ---------- */
+        .marquee { border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); background: var(--ink); color: var(--paper); overflow: hidden; padding: 16px 0; margin-top: clamp(30px, 6vw, 64px); }
+        .marquee-track { display: flex; width: max-content; animation: scroll 32s linear infinite; }
+        .marquee:hover .marquee-track { animation-play-state: paused; }
+        .marquee span { font-family: 'Fraunces', serif; font-style: italic; font-size: clamp(1.2rem, 2.6vw, 1.9rem); font-weight: 500; padding: 0 26px; display: inline-flex; align-items: center; gap: 26px; white-space: nowrap; }
+        .marquee .star { color: var(--sun); font-style: normal; }
+        @keyframes scroll { to { transform: translateX(-50%); } }
+
+        /* ---------- Sections ---------- */
+        section { position: relative; }
+        .section-pad { padding: clamp(56px, 10vw, 120px) 0; }
+        .kicker { font-weight: 700; font-size: .82rem; letter-spacing: .16em; text-transform: uppercase; color: var(--coral); display: flex; align-items: center; gap: 10px; }
+        .kicker::before { content: ""; width: 26px; height: 2px; background: var(--coral); }
+        .h2 { font-size: clamp(2rem, 5vw, 3.4rem); margin-top: 16px; max-width: 18ch; }
+
+        /* Projects */
+        .feature {
+            margin-top: clamp(34px, 5vw, 56px);
+            display: grid; grid-template-columns: 1.15fr .85fr; gap: 0;
+            background: var(--card); border: 2px solid var(--ink); border-radius: 26px;
+            box-shadow: var(--shadow-lg); overflow: hidden;
+        }
+        .feature-body { padding: clamp(28px, 4vw, 52px); }
+        .feature-tag { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; background: var(--sun); border: 2px solid var(--ink); padding: 5px 12px; border-radius: 100px; }
+        .feature h3 { font-size: clamp(1.9rem, 3.6vw, 2.8rem); margin: 18px 0 12px; }
+        .feature p { color: var(--ink-soft); font-size: 1.06rem; max-width: 42ch; }
+        .chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0 30px; }
+        .chip { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: .92rem; background: var(--paper); border: 2px solid var(--ink); padding: 8px 14px; border-radius: 12px; transition: transform .18s var(--ease), background .18s var(--ease); }
+        .chip:hover { transform: translateY(-3px) rotate(-1.5deg); background: var(--sun); }
+        .chip .gdot { width: 10px; height: 10px; border-radius: 3px; }
+
+        .feature-visual {
+            position: relative; border-left: 2px solid var(--ink);
+            background:
+                linear-gradient(135deg, rgba(255,90,54,.10), rgba(46,84,240,.08)),
+                var(--paper-2);
+            display: grid; place-items: center; min-height: 280px; overflow: hidden;
+        }
+        .mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: min(70%, 230px); transform: rotate(-6deg); }
+        .mini-cell { aspect-ratio: 1; border: 2px solid var(--ink); border-radius: 9px; background: var(--card); display: grid; place-items: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.4rem; box-shadow: 3px 3px 0 rgba(23,19,13,.18); transition: transform .25s var(--ease), background .25s var(--ease); }
+        .feature-visual:hover .mini-cell { transform: translateY(-2px); }
+        .mini-cell.on { background: var(--coral); color: #fff; }
+        .mini-cell.on2 { background: var(--teal); color: #fff; }
+        .mini-cell.on3 { background: var(--sun); }
+
+        .soon-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 22px; }
+        .soon { border: 2px dashed var(--ink); border-radius: 20px; padding: 26px; background: transparent; opacity: .85; }
+        .soon .feature-tag { background: var(--paper); }
+        .soon h4 { font-family: 'Fraunces', serif; font-size: 1.35rem; margin: 14px 0 6px; }
+        .soon p { color: var(--ink-soft); font-size: .98rem; }
+
+        /* Studio / values */
+        .studio { background: var(--paper-2); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+        .values { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: clamp(30px, 5vw, 50px); }
+        .value { background: var(--card); border: 2px solid var(--ink); border-radius: 20px; padding: 30px; box-shadow: var(--shadow); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
+        .value:hover { transform: translate(-3px,-3px); box-shadow: var(--shadow-lg); }
+        .value .ico { width: 52px; height: 52px; border: 2px solid var(--ink); border-radius: 14px; display: grid; place-items: center; font-size: 1.6rem; margin-bottom: 18px; }
+        .value:nth-child(1) .ico { background: var(--coral); }
+        .value:nth-child(2) .ico { background: var(--sun); }
+        .value:nth-child(3) .ico { background: var(--teal); }
+        .value h3 { font-size: 1.4rem; margin-bottom: 8px; }
+        .value p { color: var(--ink-soft); font-size: 1rem; }
+
+        /* Contact */
+        .contact-card {
+            margin-top: clamp(20px, 4vw, 40px); text-align: center;
+            background: var(--ink); color: var(--paper); border-radius: 28px; padding: clamp(40px, 7vw, 80px) clamp(24px, 5vw, 60px);
+            position: relative; overflow: hidden;
+        }
+        .contact-card .h2 { color: var(--paper); margin: 0 auto; }
+        .contact-card p { color: rgba(251,246,236,.75); max-width: 44ch; margin: 18px auto 32px; font-size: 1.1rem; }
+        .contact-card .btn-primary { font-size: 1.1rem; padding: 16px 30px; }
+        .contact-card .sparkle { position: absolute; font-size: 2rem; opacity: .5; }
+        .contact-card .sparkle.a { top: 18%; left: 12%; animation: floatA 7s ease-in-out infinite; }
+        .contact-card .sparkle.b { bottom: 16%; right: 14%; animation: floatB 9s ease-in-out infinite; }
+
+        /* Footer */
+        footer { border-top: 2px solid var(--ink); padding: 40px 0; }
+        .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+        .foot .brand { font-size: 1.25rem; }
+        .foot p { color: var(--ink-soft); font-size: .92rem; }
+
+        /* Scroll reveal */
+        .obs { opacity: 0; transform: translateY(28px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+        .obs.in { opacity: 1; transform: none; }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 880px) {
+            .feature { grid-template-columns: 1fr; }
+            .feature-visual { border-left: none; border-top: 2px solid var(--ink); min-height: 230px; }
+            .values { grid-template-columns: 1fr; }
+            .soon-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 560px) {
+            .hide-sm { display: none; }
+            h1.title { font-size: clamp(2.6rem, 13vw, 3.6rem); }
+            .shape.s1, .shape.s2, .shape.s4 { display: none; }
+            .shape.s3 { width: 40px; height: 40px; top: 12%; right: 5%; }
+            .blob { filter: blur(46px); }
+            .sticker { display: none; }
+            .marquee span { gap: 18px; padding: 0 18px; }
+            .btn { width: 100%; justify-content: center; }
+            .hero-cta { flex-direction: column; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+            .reveal-word, .fade-up, .obs { opacity: 1 !important; transform: none !important; }
+            .squiggle path { stroke-dashoffset: 0 !important; }
+        }
+    </style>
 </head>
-<body class="font-inter bg-white text-black min-h-screen flex flex-col">
-    <div class="max-w-6xl mx-auto px-8 flex-1 flex flex-col">
-        <!-- Header -->
-        <header class="py-8 border-b border-gray-200">
-            <div class="text-center">
-                <h1 class="text-3xl font-semibold tracking-tight">Marshellis</h1>
+<body>
+
+    <!-- Header -->
+    <header id="header">
+        <div class="wrap nav">
+            <a href="#top" class="brand" aria-label="Marshellis home"><span class="dot" aria-hidden="true"></span>Marshellis</a>
+            <nav class="nav-links">
+                <a href="#projects" class="lnk hide-sm">Projects</a>
+                <a href="#studio" class="lnk hide-sm">Studio</a>
+                <a href="#contact" class="btn btn-mini btn-primary">Say hello</a>
+            </nav>
+        </div>
+    </header>
+
+    <span id="top"></span>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-blobs" aria-hidden="true">
+            <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
+        </div>
+
+        <!-- floating puzzle shapes -->
+        <svg class="shape s1" width="58" height="58" viewBox="0 0 58 58" aria-hidden="true"><rect x="3" y="3" width="52" height="52" rx="12" fill="#FFC23C" stroke="#17130D" stroke-width="3"/><circle cx="29" cy="29" r="11" fill="none" stroke="#17130D" stroke-width="3"/></svg>
+        <svg class="shape s2" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 3l21 36H3z" fill="#149C77" stroke="#17130D" stroke-width="3" stroke-linejoin="round"/></svg>
+        <svg class="shape s3" width="54" height="54" viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="24" fill="#B7A4EE" stroke="#17130D" stroke-width="3"/><path d="M27 12v30M12 27h30" stroke="#17130D" stroke-width="3" stroke-linecap="round"/></svg>
+        <svg class="shape s4" width="50" height="50" viewBox="0 0 50 50" aria-hidden="true"><path d="M25 2l5.9 14.8L46 19l-11 10.2L37.8 45 25 37.3 12.2 45 15 29.2 4 19l15.1-2.2z" fill="#2E54F0" stroke="#17130D" stroke-width="3" stroke-linejoin="round"/></svg>
+
+        <!-- rotating sticker -->
+        <svg class="sticker" viewBox="0 0 200 200" aria-hidden="true">
+            <g class="ring">
+                <defs><path id="circlePath" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0"/></defs>
+                <text><textPath href="#circlePath" startOffset="0">FAMILY&nbsp;MADE&nbsp;•&nbsp;SMALL&nbsp;&amp;&nbsp;FUN&nbsp;•&nbsp;BUILT&nbsp;TO&nbsp;DELIGHT&nbsp;•&nbsp;</textPath></text>
+            </g>
+            <text class="center" x="100" y="115" text-anchor="middle">✦</text>
+        </svg>
+
+        <div class="wrap">
+            <span class="eyebrow fade-up d1"><span class="pulse" aria-hidden="true"></span>A family-run studio</span>
+
+            <h1 class="title">
+                <span class="reveal-word" style="--i:0">We</span>
+                <span class="reveal-word" style="--i:1">make</span>
+                <span class="reveal-word hl" style="--i:2">delightful<svg class="squiggle" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true"><path d="M2 14 Q 40 2, 78 11 T 150 11 T 224 11 T 298 9"/></svg></span>
+                <span class="reveal-word" style="--i:3">little</span>
+                <span class="reveal-word" style="--i:4">apps.</span>
+            </h1>
+
+            <p class="lede fade-up d2">Marshellis is a family-run studio crafting small projects and fun apps — built with care, a love of detail, and a healthy obsession with delight.</p>
+
+            <div class="hero-cta">
+                <a href="https://games.marshellis.com" class="btn btn-primary fade-up d3">Play our games <span class="arrow" aria-hidden="true">→</span></a>
+                <a href="#projects" class="btn fade-up d4">See what we build</a>
             </div>
-        </header>
+        </div>
+    </section>
 
-        <!-- Main Content -->
-        <main class="flex-1 py-16">
-            <!-- Hero Section -->
-            <section class="text-center mb-24">
-                <h2 class="text-5xl md:text-6xl font-light tracking-tight mb-6 leading-tight">
-                    Building Small Projects & Fun Apps
-                </h2>
-                <p class="text-xl font-medium text-gray-600 mb-8">
-                    A family-run business creating delightful digital experiences
-                </p>
-                <p class="text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed">
-                    We're passionate about crafting small projects and fun applications that bring joy and utility to everyday life.
-                    From simple tools to creative experiments, we build with care and attention to detail.
-                </p>
-            </section>
-
-
-            <!-- Projects Section -->
-            <section class="mb-24 text-center">
-                <h3 class="text-3xl font-medium mb-12 tracking-tight">Our Projects</h3>
-                <div class="max-w-md mx-auto">
-                    <a href="https://games.marshellis.com"
-                       class="group block border-2 border-black rounded-lg p-8 text-left transition-all duration-200 hover:bg-black hover:text-white transform hover:-translate-y-1">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-2xl font-medium tracking-tight">Daily Puzzle Games</h4>
-                            <span class="text-2xl transition-transform duration-200 group-hover:translate-x-1">&rarr;</span>
-                        </div>
-                        <p class="text-base text-gray-600 group-hover:text-gray-200 leading-relaxed">
-                            Printable &amp; playable puzzles for every grade &mdash; Sudoku, KenKen, mazes,
-                            word searches, logic grids and math worksheets. A fresh set every day.
-                        </p>
-                    </a>
-                </div>
-            </section>
-
-            <!-- Contact Section -->
-            <section class="text-center">
-                <h3 class="text-3xl font-medium mb-6 tracking-tight">Get In Touch</h3>
-                <p class="text-lg text-gray-700 mb-8 max-w-lg mx-auto">
-                    Have a question or want to collaborate? We'd love to hear from you.
-                </p>
-                <a href="mailto:support@marshellis.com" class="inline-block text-xl font-medium border-2 border-black px-8 py-4 rounded-md hover:bg-black hover:text-white transition-all duration-200 transform hover:-translate-y-0.5">
-                    support@marshellis.com
-                </a>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="py-8 border-t border-gray-200 text-center">
-            <p class="text-gray-600 text-sm">&copy; 2025 Marshellis. A family-run business.</p>
-        </footer>
+    <!-- Marquee -->
+    <div class="marquee" aria-hidden="true">
+        <div class="marquee-track">
+            <span><span class="star">✦</span> Sudoku <span class="star">✦</span> Mazes <span class="star">✦</span> KenKen <span class="star">✦</span> Word Search <span class="star">✦</span> Logic Grids <span class="star">✦</span> Math Worksheets <span class="star">✦</span> A fresh set every day <span class="star">✦</span> Play or print&nbsp;</span>
+            <span><span class="star">✦</span> Sudoku <span class="star">✦</span> Mazes <span class="star">✦</span> KenKen <span class="star">✦</span> Word Search <span class="star">✦</span> Logic Grids <span class="star">✦</span> Math Worksheets <span class="star">✦</span> A fresh set every day <span class="star">✦</span> Play or print&nbsp;</span>
+        </div>
     </div>
+
+    <!-- Projects -->
+    <section id="projects" class="section-pad">
+        <div class="wrap">
+            <p class="kicker obs">Our projects</p>
+            <h2 class="h2 obs">Little things, made with big care.</h2>
+
+            <article class="feature obs">
+                <div class="feature-body">
+                    <span class="feature-tag">✦ Live now</span>
+                    <h3>Daily Puzzle Games</h3>
+                    <p>Printable &amp; playable puzzles for every grade, calibrated from grade 1 to 8. A fresh set lands every single day — solve on screen or print the whole packet.</p>
+                    <div class="chips">
+                        <span class="chip"><span class="gdot" style="background:var(--coral)"></span>Sudoku</span>
+                        <span class="chip"><span class="gdot" style="background:var(--blue)"></span>KenKen</span>
+                        <span class="chip"><span class="gdot" style="background:var(--teal)"></span>Mazes</span>
+                        <span class="chip"><span class="gdot" style="background:var(--sun)"></span>Word Search</span>
+                        <span class="chip"><span class="gdot" style="background:var(--lilac)"></span>Logic Grids</span>
+                        <span class="chip"><span class="gdot" style="background:var(--ink)"></span>Math Worksheets</span>
+                    </div>
+                    <a href="https://games.marshellis.com" class="btn btn-primary">Open the games <span class="arrow" aria-hidden="true">→</span></a>
+                </div>
+                <div class="feature-visual" aria-hidden="true">
+                    <div class="mini-grid">
+                        <div class="mini-cell">5</div>
+                        <div class="mini-cell on">3</div>
+                        <div class="mini-cell">8</div>
+                        <div class="mini-cell on3">1</div>
+                        <div class="mini-cell">9</div>
+                        <div class="mini-cell on2">4</div>
+                        <div class="mini-cell">7</div>
+                        <div class="mini-cell on2">2</div>
+                        <div class="mini-cell">6</div>
+                    </div>
+                </div>
+            </article>
+
+            <div class="soon-grid">
+                <article class="soon obs">
+                    <span class="feature-tag">In the workshop</span>
+                    <h4>Something new</h4>
+                    <p>We're tinkering on the next small, fun app. It'll show up here when it's ready to delight.</p>
+                </article>
+                <article class="soon obs">
+                    <span class="feature-tag">Got an idea?</span>
+                    <h4>Build it with us</h4>
+                    <p>We love a good tiny-project collaboration. Tell us what would make your day a little better.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Studio -->
+    <section id="studio" class="studio section-pad">
+        <div class="wrap">
+            <p class="kicker obs">The studio</p>
+            <h2 class="h2 obs">A family at a kitchen table, basically.</h2>
+            <div class="values">
+                <div class="value obs">
+                    <div class="ico" aria-hidden="true">🏠</div>
+                    <h3>Family-made</h3>
+                    <p>Every project is built by us, together — no committees, no filler, just the things we genuinely want to exist.</p>
+                </div>
+                <div class="value obs">
+                    <div class="ico" aria-hidden="true">✺</div>
+                    <h3>Small &amp; sharp</h3>
+                    <p>We make little apps that do one thing beautifully. Fast, focused, and free of the usual clutter.</p>
+                </div>
+                <div class="value obs">
+                    <div class="ico" aria-hidden="true">✦</div>
+                    <h3>Built to delight</h3>
+                    <p>Details matter. We sweat the small stuff so the things we ship feel thoughtful and just plain fun to use.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="section-pad">
+        <div class="wrap">
+            <div class="contact-card obs">
+                <span class="sparkle a" aria-hidden="true">✦</span>
+                <span class="sparkle b" aria-hidden="true">✺</span>
+                <h2 class="h2">Have an idea? Let's make it.</h2>
+                <p>Questions, collaborations, or just want to say hi — we'd genuinely love to hear from you.</p>
+                <a href="mailto:support@marshellis.com" class="btn btn-primary">support@marshellis.com</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="wrap foot">
+            <a href="#top" class="brand"><span class="dot" aria-hidden="true"></span>Marshellis</a>
+            <p>Made at the kitchen table. &copy; 2025 Marshellis — a family-run business.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Sticky header state
+        const header = document.getElementById('header');
+        const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 12);
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        // Scroll reveal
+        const obs = document.querySelectorAll('.obs');
+        if ('IntersectionObserver' in window) {
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach((e, idx) => {
+                    if (e.isIntersecting) {
+                        e.target.style.transitionDelay = (Math.min(idx, 4) * 60) + 'ms';
+                        e.target.classList.add('in');
+                        io.unobserve(e.target);
+                    }
+                });
+            }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+            obs.forEach((el) => io.observe(el));
+        } else {
+            obs.forEach((el) => el.classList.add('in'));
+        }
+    </script>
 </body>
 </html>
