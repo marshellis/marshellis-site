@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marshellis - Building Small Projects & Fun Apps</title>
+    <meta name="description" content="Marshellis is a family-run business creating small projects and fun apps of all sorts. Try our daily puzzle games!">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+</head>
+<body class="font-inter bg-white text-black min-h-screen flex flex-col">
+    <div class="max-w-6xl mx-auto px-8 flex-1 flex flex-col">
+        <!-- Header -->
+        <header class="py-8 border-b border-gray-200">
+            <div class="text-center">
+                <h1 class="text-3xl font-semibold tracking-tight">Marshellis</h1>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 py-16">
+            <!-- Hero Section -->
+            <section class="text-center mb-24">
+                <h2 class="text-5xl md:text-6xl font-light tracking-tight mb-6 leading-tight">
+                    Building Small Projects & Fun Apps
+                </h2>
+                <p class="text-xl font-medium text-gray-600 mb-8">
+                    A family-run business creating delightful digital experiences
+                </p>
+                <p class="text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed">
+                    We're passionate about crafting small projects and fun applications that bring joy and utility to everyday life.
+                    From simple tools to creative experiments, we build with care and attention to detail.
+                </p>
+            </section>
+
+
+            <!-- Projects Section -->
+            <section class="mb-24 text-center">
+                <h3 class="text-3xl font-medium mb-12 tracking-tight">Our Projects</h3>
+                <div class="max-w-md mx-auto">
+                    <a href="https://games.marshellis.com"
+                       class="group block border-2 border-black rounded-lg p-8 text-left transition-all duration-200 hover:bg-black hover:text-white transform hover:-translate-y-1">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-2xl font-medium tracking-tight">Daily Puzzle Games</h4>
+                            <span class="text-2xl transition-transform duration-200 group-hover:translate-x-1">&rarr;</span>
+                        </div>
+                        <p class="text-base text-gray-600 group-hover:text-gray-200 leading-relaxed">
+                            Printable &amp; playable puzzles for every grade &mdash; Sudoku, KenKen, mazes,
+                            word searches, logic grids and math worksheets. A fresh set every day.
+                        </p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Contact Section -->
+            <section class="text-center">
+                <h3 class="text-3xl font-medium mb-6 tracking-tight">Get In Touch</h3>
+                <p class="text-lg text-gray-700 mb-8 max-w-lg mx-auto">
+                    Have a question or want to collaborate? We'd love to hear from you.
+                </p>
+                <a href="mailto:support@marshellis.com" class="inline-block text-xl font-medium border-2 border-black px-8 py-4 rounded-md hover:bg-black hover:text-white transition-all duration-200 transform hover:-translate-y-0.5">
+                    support@marshellis.com
+                </a>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="py-8 border-t border-gray-200 text-center">
+            <p class="text-gray-600 text-sm">&copy; 2025 Marshellis. A family-run business.</p>
+        </footer>
+    </div>
+</body>
+</html>
