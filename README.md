@@ -17,3 +17,17 @@ Local preview: just open `index.html` in a browser, or `npx serve .`.
 ## Projects linked from here
 
 - **Daily Puzzle Games** → https://games.marshellis.com (source: `marshellis/game-generator`)
+
+## Arcade (`/arcade/`)
+
+- `arcade/index.html` — arcade landing page. `arcade/hex-collapse/index.html` — the Hex Collapse game (single file, Three.js from a CDN).
+- `api/scores.js` — Vercel serverless function that powers the world leaderboard (no npm dependencies).
+  It stores the top 200 scores in an **Upstash Redis** database via its REST API.
+
+**One-time setup for the leaderboard:** Vercel dashboard → this project → **Storage** → **Create Database** →
+choose **Upstash Redis** (free tier) → connect it to this project (all environments), then **redeploy**.
+That adds `KV_REST_API_URL` and `KV_REST_API_TOKEN` automatically. Until then the game works fine and the
+leaderboard just says it's unavailable.
+
+Scores are checked server-side: each round gets a signed, single-use token, and a submitted score can't be
+longer than the real time since the round started. Names are 16 characters max with a basic profanity filter.
