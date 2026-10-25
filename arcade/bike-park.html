@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bike Park</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { overflow:hidden; }
+canvas { display:block; }
+#hud {
+  position:fixed; top:16px; left:20px;
+  font-family:'Arial Black',Arial,sans-serif; pointer-events:none; user-select:none;
+}
+#score-val { font-size:30px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.8); }
+#goal-val  { font-size:14px; color:#ddd; text-shadow:0 1px 4px rgba(0,0,0,.8); margin-bottom:4px; }
+#combo-val { font-size:22px; color:#FFD700; text-shadow:0 0 12px rgba(255,215,0,.6),0 2px 4px rgba(0,0,0,.8); min-height:28px; }
+#trick-val { font-size:28px; color:#00FF88; text-shadow:0 0 20px rgba(0,255,136,.7),0 2px 4px rgba(0,0,0,.8); min-height:36px; }
+#bar { position:fixed; top:0; left:0; right:0; height:5px; background:rgba(255,255,255,.2); }
+#bar-fill { height:100%; background:linear-gradient(90deg,#00FF88,#FFD700); width:0; transition:width .4s; }
+#controls {
+  position:fixed; bottom:16px; left:16px;
+  color:rgba(255,255,255,.82); font-family:Arial,sans-serif; font-size:13px;
+  text-shadow:0 1px 3px rgba(0,0,0,.8); line-height:1.9; pointer-events:none;
+}
+#overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.75); align-items:center; justify-content:center;
+}
+#overlay.show { display:flex; }
+#panel {
+  background:#0d1b2a; border:2px solid #FFD700; border-radius:18px;
+  padding:44px 56px; text-align:center; color:#fff;
+  font-family:'Arial Black',Arial,sans-serif;
+}
+#panel h1 { font-size:50px; color:#FFD700; margin-bottom:12px; }
+#panel p  { font-size:20px; color:#ccc; }
+#panel button {
+  margin-top:28px; padding:14px 40px; font-size:18px; font-weight:900;
+  background:#FFD700; color:#000; border:none; border-radius:12px; cursor:pointer;
+}
+#panel button:hover { background:#f5c700; }
+</style>
+</head>
+<body>
+<div id="bar"><div id="bar-fill"></div></div>
+<div id="hud">
+  <div id="score-val">0 pts</div>
+  <div id="goal-val">Goal: 5,000</div>
+  <div id="combo-val"></div>
+  <div id="trick-val"></div>
+</div>
+<div id="controls">
+  <b>W/S</b> Ride/Brake &nbsp; <b>A/D</b> Steer &nbsp; <b>SPACE</b> Jump<br>
+  <b>↑↓</b> Flip (air) &nbsp; <b>←→</b> Barspin (air)<br>
+  <b>G</b> Grind &nbsp; <b>H</b> No Hands &nbsp; <b>F</b> No Feet
+</div>
+<div id="overlay">
+  <div id="panel">
+    <h1 id="p-title">LEVEL COMPLETE!</h1>
+    <p id="p-msg"></p>
+    <button onclick="restart()">Play Again</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+
+const GOAL       = 5000;
+const GRAVITY    = -28;
+const MAX_SPEED  = 20;
+const ACCEL      = 14;
+const FRICTION   = 0.88;
+const STEER_RATE = 2.4;
+const JUMP_VEL   = 13;
+const FLIP_RATE  = 5.0;
+const BIKE_BOT   = 0.48;
+
+// ── Renderer ────────────────────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB);
+scene.fog = new THREE.FogExp2(0x87CEEB, 0.011);
+
+const camera = new THREE.PerspectiveCamera(65, innerWidth/innerHeight, 0.1, 300);
+
+// ── Lighting ────────────────────────────────────────────────────────────────
+const sun = new THREE.DirectionalLight(0xfff4e0, 1.3);
+sun.position.set(30, 60, 20);
+sun.castShadow = true;
+Object.assign(sun.shadow.camera, { left:-80, right:80, top:80, bottom:-80, near:1, far:250 });
+sun.shadow.mapSize.set(2048, 2048);
+scene.add(sun, new THREE.AmbientLight(0xb0ccff, 0.55));
+
+// ── Materials ────────────────────────────────────────────────────────────────
+const mGround  = new THREE.MeshLambertMaterial({ color:0x4a8040 });
+const mAsphalt = new THREE.MeshLambertMaterial({ color:0x505060 });
+const mRamp    = new THREE.MeshLambertMaterial({ color:0x9b8050 });
+const mRail    = new THREE.MeshLambertMaterial({ color:0xb8b8c8 });
+const mLedge   = new THREE.MeshLambertMaterial({ color:0xcc9955 });
+const mFrame   = new THREE.MeshLambertMaterial({ color:0xff3300 });
+const mWheel   = new THREE.MeshLambertMaterial({ color:0x111111 });
+const mTree    = new THREE.MeshLambertMaterial({ color:0x228822 });
+const mTrunk   = new THREE.MeshLambertMaterial({ color:0x7a4a1a });
+
+// ── Collision Surfaces ───────────────────────────────────────────────────────
+// flat: { type:'flat', x,z,w,d,y }
+// ramp dir 0: along Z, base at z=bz (y=baseY), tip at z=bz-len (y=tipY)
+// ramp dir 1: along Z, base at z=bz (y=baseY), tip at z=bz+len (y=tipY)
+// ramp dir 2: along X, base at x=bx (y=baseY), tip at x=bx+len (y=tipY)
+// ramp dir 3: along X, base at x=bx (y=baseY), tip at x=bx-len (y=tipY)
+const surfaces = [];
+const railDefs = [];
+
+function surfaceY(px, pz) {
+  let best = -Infinity;
+  for (const s of surfaces) {
+    let h = -Infinity;
+    if (s.type === 'flat') {
+      if (Math.abs(px-s.x) <= s.w*.5 && Math.abs(pz-s.z) <= s.d*.5) h = s.y;
+    } else {
+      const r = s;
+      if (r.dir === 0) {
+        const z0=r.bz-r.len, z1=r.bz;
+        if (Math.abs(px-r.bx) <= r.w*.5 && pz >= z0 && pz <= z1) {
+          const t=(pz-z0)/r.len; h=r.tipY+t*(r.baseY-r.tipY);
+        }
+      } else if (r.dir === 1) {
+        const z0=r.bz, z1=r.bz+r.len;
+        if (Math.abs(px-r.bx) <= r.w*.5 && pz >= z0 && pz <= z1) {
+          const t=(pz-z0)/r.len; h=r.baseY+t*(r.tipY-r.baseY);
+        }
+      } else if (r.dir === 2) {
+        const x0=r.bx, x1=r.bx+r.len;
+        if (Math.abs(pz-r.bz) <= r.w*.5 && px >= x0 && px <= x1) {
+          const t=(px-x0)/r.len; h=r.baseY+t*(r.tipY-r.baseY);
+        }
+      } else {
+        const x0=r.bx-r.len, x1=r.bx;
+        if (Math.abs(pz-r.bz) <= r.w*.5 && px >= x0 && px <= x1) {
+          const t=(px-x0)/r.len; h=r.tipY+t*(r.baseY-r.tipY);
+        }
+      }
+    }
+    if (h > best) best = h;
+  }
+  return best;
+}
+
+// ── Scene Helper ─────────────────────────────────────────────────────────────
+function addMesh(geo, mat, x=0, y=0, z=0, rx=0, ry=0, rz=0) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x,y,z);
+  m.rotation.set(rx,ry,rz);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  scene.add(m);
+  return m;
+}
+
+// ── Park Builder ─────────────────────────────────────────────────────────────
+function addRamp(cx, cz, width, len, height, dir) {
+  const hyp   = Math.hypot(height, len);
+  const angle = Math.atan2(height, len);
+
+  if (dir === 0 || dir === 1) {
+    const sign = dir === 0 ? -1 : 1;
+    addMesh(new THREE.BoxGeometry(width, height, len), mRamp, cx, height/2, cz+sign*len/2);
+    const cap = addMesh(new THREE.BoxGeometry(width, 0.2, hyp), mRamp, cx, height/2, cz+sign*len/2);
+    cap.rotation.x = sign * angle;
+  } else {
+    const sign = dir === 2 ? 1 : -1;
+    addMesh(new THREE.BoxGeometry(len, height, width), mRamp, cx+sign*len/2, height/2, cz);
+    const cap = addMesh(new THREE.BoxGeometry(hyp, 0.2, width), mRamp, cx+sign*len/2, height/2, cz);
+    cap.rotation.z = -sign * angle;
+  }
+
+  surfaces.push({ type:'ramp', bx:cx, bz:cz, w:width, len, baseY:0, tipY:height, dir });
+}
+
+function addRail(x1,y1,z1, x2,y2,z2) {
+  const dx=x2-x1, dy=y2-y1, dz=z2-z1;
+  const len = Math.hypot(dx,dy,dz);
+  const rail = addMesh(new THREE.CylinderGeometry(0.065, 0.065, len, 8), mRail,
+    (x1+x2)/2, (y1+y2)/2, (z1+z2)/2);
+  rail.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(dx,dy,dz).normalize());
+  for (const [px,py,pz] of [[x1,y1,z1],[x2,y2,z2]]) {
+    addMesh(new THREE.CylinderGeometry(.05,.06,py,6), mRail, px, py/2, pz);
+  }
+  railDefs.push({ x1,y1,z1, x2,y2,z2 });
+}
+
+function addLedge(x, z, w, d, h) {
+  addMesh(new THREE.BoxGeometry(w, h, d), mLedge, x, h/2, z);
+  surfaces.push({ type:'flat', x, z, w, d, y:h });
+}
+
+function addTree(x, z) {
+  addMesh(new THREE.CylinderGeometry(.28,.38,3.5,6), mTrunk, x, 1.75, z);
+  addMesh(new THREE.SphereGeometry(2.8,7,5), mTree, x, 5.5, z);
+}
+
+function buildPark() {
+  // Ground
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(150,150), mGround);
+  g.rotation.x = -Math.PI/2; g.position.y = -0.01; g.receiveShadow = true;
+  scene.add(g);
+  surfaces.push({ type:'flat', x:0, z:0, w:150, d:150, y:0 });
+
+  // Asphalt strip
+  addMesh(new THREE.BoxGeometry(44, 0.12, 96), mAsphalt, 0, 0.06, 0);
+  surfaces.push({ type:'flat', x:0, z:0, w:44, d:96, y:0.12 });
+
+  // Launch ramps (facing each other)
+  addRamp(0,  40, 10, 12, 6, 0);   // south, rises toward centre
+  addRamp(0, -40, 10, 12, 6, 1);   // north, rises toward centre
+
+  // Side kickers
+  addRamp( 20, 4, 6, 8, 3.5, 2);   // rises in +X
+  addRamp(-20, 4, 6, 8, 3.5, 3);   // rises in -X
+
+  // Flat rails
+  addRail(-7, 0.9, -14,  7, 0.9, -14);
+  addRail(-7, 0.9,  14,  7, 0.9,  14);
+  // Angled rails off ramp sides
+  addRail(-6, 0.9, -24,  6, 3.2, -18);
+  addRail(-6, 0.9,  24,  6, 3.2,  18);
+
+  // Ledges
+  addLedge(-22, -10, 8, 4, 1.0);
+  addLedge( 22, -10, 8, 4, 1.0);
+  addLedge(-22,  10, 8, 4, 1.0);
+  addLedge( 22,  10, 8, 4, 1.0);
+  addLedge(  0,   0, 5, 5, 0.8);
+
+  // Trees
+  for (let i = 0; i < 22; i++) {
+    const a = (i/22)*Math.PI*2, r = 58 + Math.random()*7;
+    addTree(Math.cos(a)*r, Math.sin(a)*r);
+  }
+}
+
+// ── Bike Model ───────────────────────────────────────────────────────────────
+const bikeGroup = new THREE.Group();
+scene.add(bikeGroup);
+let bikeBar, frontWheel, rearWheel;
+
+function buildBike() {
+  function bAdd(geo, mat, x,y,z) {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x,y,z); m.castShadow = true;
+    bikeGroup.add(m); return m;
+  }
+  bAdd(new THREE.BoxGeometry(.12,.55,1.15), mFrame, 0,.28,0);    // main frame
+  bAdd(new THREE.BoxGeometry(.08,.08,.95),  mFrame, 0,.70,0);    // top tube
+  bAdd(new THREE.BoxGeometry(.08,.55,.08),  mFrame, 0,.35,.42);  // seat tube
+  bAdd(new THREE.BoxGeometry(.38,.07,.22),  mFrame, 0,.72,.38);  // seat
+  bAdd(new THREE.BoxGeometry(.07,.45,.07),  mFrame, 0,.50,-.52); // stem
+  bikeBar = bAdd(new THREE.BoxGeometry(.72,.07,.07), mFrame, 0,.95,-.52); // bars
+
+  const wGeo = new THREE.TorusGeometry(.42,.09,8,18);
+  frontWheel = new THREE.Mesh(wGeo, mWheel);
+  frontWheel.rotation.y = Math.PI/2; frontWheel.position.set(0,0,-.55);
+  frontWheel.castShadow = true; bikeGroup.add(frontWheel);
+
+  rearWheel = new THREE.Mesh(wGeo, mWheel);
+  rearWheel.rotation.y = Math.PI/2; rearWheel.position.set(0,0,.55);
+  rearWheel.castShadow = true; bikeGroup.add(rearWheel);
+}
+buildBike();
+
+// ── Nearest Rail ─────────────────────────────────────────────────────────────
+function nearestRail(px,py,pz, threshold=1.5) {
+  let best=null, bestD=threshold;
+  for (const r of railDefs) {
+    const dx=r.x2-r.x1, dy=r.y2-r.y1, dz=r.z2-r.z1;
+    const len2 = dx*dx+dy*dy+dz*dz;
+    const t = Math.max(0, Math.min(1, ((px-r.x1)*dx+(py-r.y1)*dy+(pz-r.z1)*dz)/len2));
+    const d = Math.hypot(px-r.x1-t*dx, py-r.y1-t*dy, pz-r.z1-t*dz);
+    if (d < bestD) { bestD=d; best={r,t}; }
+  }
+  return best;
+}
+
+// ── Game State ───────────────────────────────────────────────────────────────
+const S = {
+  pos: new THREE.Vector3(0, BIKE_BOT, 28),
+  vel: new THREE.Vector3(0,0,0),
+  yaw: Math.PI, speed:0, onGround:false,
+  flipRot:0, barspinRot:0,
+  noHandsTime:0, noHandsDone:false,
+  noFeetTime:0, noFeetDone:false,
+  grinding:false, grindRail:null, grindT:0, grindDir:1,
+  score:0, combo:1, airDone:false,
+  bailTimer:0, won:false,
+};
+
+// ── Input ────────────────────────────────────────────────────────────────────
+const K = {};
+addEventListener('keydown', e => { K[e.code]=true; e.preventDefault(); });
+addEventListener('keyup',   e => { K[e.code]=false; });
+
+// ── HUD ──────────────────────────────────────────────────────────────────────
+let trickTimer = 0;
+
+function hudScore() {
+  document.getElementById('score-val').textContent = S.score.toLocaleString() + ' pts';
+  document.getElementById('bar-fill').style.width = Math.min(100, S.score/GOAL*100) + '%';
+}
+function hudCombo() {
+  document.getElementById('combo-val').textContent = S.combo > 1 ? `x${S.combo} COMBO` : '';
+}
+function hudTrick(txt) {
+  document.getElementById('trick-val').textContent = txt;
+  trickTimer = 2.0;
+}
+function award(pts, name) {
+  S.score += pts; hudScore(); hudCombo();
+  hudTrick(`${name}  +${pts}`);
+  if (S.score >= GOAL && !S.won) winGame();
+}
+
+// ── Win / Bail ────────────────────────────────────────────────────────────────
+function winGame() {
+  S.won = true;
+  document.getElementById('p-title').textContent = 'LEVEL COMPLETE!';
+  document.getElementById('p-msg').textContent = `Final Score: ${S.score.toLocaleString()} pts`;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function bail() {
+  S.bailTimer = 1.8; S.score = Math.max(0, S.score-150);
+  S.combo=1; S.airDone=false; S.flipRot=0; S.barspinRot=0;
+  hudScore(); hudCombo(); hudTrick('BAIL!  -150');
+}
+
+function resetBike() {
+  S.pos.set(0, BIKE_BOT, 28); S.vel.set(0,0,0);
+  S.yaw=Math.PI; S.speed=0; S.onGround=false; S.grinding=false;
+}
+
+function restart() {
+  Object.assign(S, {
+    score:0, combo:1, airDone:false, won:false, bailTimer:0,
+    flipRot:0, barspinRot:0,
+    noHandsTime:0, noHandsDone:false, noFeetTime:0, noFeetDone:false,
+  });
+  resetBike(); hudScore(); hudCombo();
+  document.getElementById('trick-val').textContent='';
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ── Physics ───────────────────────────────────────────────────────────────────
+function update(dt) {
+  if (S.won) return;
+
+  if (S.bailTimer > 0) {
+    S.bailTimer -= dt;
+    if (S.bailTimer <= 0) resetBike();
+    return;
+  }
+
+  const sinY = Math.sin(S.yaw), cosY = Math.cos(S.yaw);
+
+  // Grinding
+  if (S.grinding) {
+    const r = S.grindRail;
+    const dx=r.x2-r.x1, dy=r.y2-r.y1, dz=r.z2-r.z1;
+    const rLen = Math.hypot(dx,dy,dz);
+    S.grindT += S.grindDir * (9/rLen) * dt;
+    if (S.grindT >= 1 || S.grindT <= 0) {
+      S.grinding = false;
+      const ex = S.grindT >= 1 ? 1 : 0;
+      S.pos.set(r.x1+ex*dx, r.y1+ex*dy+BIKE_BOT+.1, r.z1+ex*dz);
+      const exitSin=Math.sin(S.yaw), exitCos=Math.cos(S.yaw);
+      S.vel.set(-exitSin*8, 5, -exitCos*8);
+    } else {
+      S.pos.set(r.x1+S.grindT*dx, r.y1+S.grindT*dy+BIKE_BOT+.08, r.z1+S.grindT*dz);
+      S.vel.set(0,0,0);
+      S.yaw = Math.atan2(-dx*S.grindDir, -dz*S.grindDir);
+    }
+    return;
+  }
+
+  // Ground check
+  const sy = Math.max(0, surfaceY(S.pos.x, S.pos.z));
+  S.onGround = S.pos.y <= sy + BIKE_BOT + .08 && S.vel.y <= .5;
+
+  // Ground controls
+  if (S.onGround) {
+    if (K['KeyA']) S.yaw += STEER_RATE*dt;
+    if (K['KeyD']) S.yaw -= STEER_RATE*dt;
+    if (K['KeyW']) S.speed = Math.min(MAX_SPEED, S.speed + ACCEL*dt);
+    else if (K['KeyS']) S.speed = Math.max(-MAX_SPEED*.4, S.speed - ACCEL*dt);
+    else S.speed *= Math.pow(FRICTION, dt*60);
+    if (K['Space']) { S.vel.y = JUMP_VEL; S.onGround = false; }
+  }
+
+  // Air tricks
+  if (!S.onGround) {
+    // Flip ↑/↓
+    const flipDir = K['ArrowUp'] ? -1 : K['ArrowDown'] ? 1 : 0;
+    if (flipDir) {
+      const prev = S.flipRot;
+      S.flipRot += flipDir * FLIP_RATE * dt;
+      if (Math.floor(Math.abs(S.flipRot)/(Math.PI*2)) > Math.floor(Math.abs(prev)/(Math.PI*2))) {
+        const pts = 600 * S.combo;
+        S.combo++; S.airDone = true;
+        award(pts, flipDir < 0 ? 'BACKFLIP!' : 'FRONTFLIP!');
+      }
+    }
+
+    // Barspin ←/→
+    const spinDir = K['ArrowLeft'] ? 1 : K['ArrowRight'] ? -1 : 0;
+    if (spinDir) {
+      const prev = S.barspinRot;
+      S.barspinRot += spinDir * FLIP_RATE * 1.6 * dt;
+      if (Math.floor(Math.abs(S.barspinRot)/(Math.PI*2)) > Math.floor(Math.abs(prev)/(Math.PI*2))) {
+        const pts = 450 * S.combo;
+        S.combo++; S.airDone = true;
+        award(pts, 'BARSPIN!');
+      }
+    }
+
+    // No Hands H
+    if (K['KeyH']) {
+      S.noHandsTime += dt;
+      if (S.noHandsTime >= .6 && !S.noHandsDone) {
+        S.noHandsDone = true; S.airDone = true;
+        const pts = 300 * S.combo; S.combo++;
+        award(pts, 'NO HANDS!');
+      }
+    } else { S.noHandsTime=0; S.noHandsDone=false; }
+
+    // No Feet F
+    if (K['KeyF']) {
+      S.noFeetTime += dt;
+      if (S.noFeetTime >= .6 && !S.noFeetDone) {
+        S.noFeetDone = true; S.airDone = true;
+        const pts = 300 * S.combo; S.combo++;
+        award(pts, 'NO FEET!');
+      }
+    } else { S.noFeetTime=0; S.noFeetDone=false; }
+
+    // Grind G
+    if (K['KeyG']) {
+      const hit = nearestRail(S.pos.x, S.pos.y, S.pos.z);
+      if (hit) {
+        S.grinding=true; S.grindRail=hit.r; S.grindT=hit.t;
+        const r=hit.r, rdx=r.x2-r.x1, rdz=r.z2-r.z1;
+        S.grindDir = (-sinY*rdx + -cosY*rdz) >= 0 ? 1 : -1;
+        S.vel.set(0,0,0);
+        const pts = 350 * S.combo; S.combo++; S.airDone=true;
+        award(pts, 'GRIND!');
+      }
+    }
+  }
+
+  // Velocity + position
+  if (S.onGround) {
+    const ahead=.18;
+    const syA = Math.max(0, surfaceY(S.pos.x - sinY*ahead, S.pos.z - cosY*ahead));
+    const slope = (syA - sy) / ahead;
+    S.vel.set(-sinY*S.speed, slope*S.speed, -cosY*S.speed);
+
+    // Bail if landed with messy flip
+    if (Math.abs(S.flipRot) > 1.0) {
+      const laps = Math.abs(S.flipRot) / (Math.PI*2);
+      const frac = laps - Math.floor(laps);
+      if (frac > .22 && frac < .78) { bail(); return; }
+    }
+
+    // Reset air trick state on land
+    S.flipRot=0; S.barspinRot=0;
+    S.noHandsTime=0; S.noHandsDone=false;
+    S.noFeetTime=0; S.noFeetDone=false;
+    S.airDone=false;
+    S.pos.y = sy + BIKE_BOT;
+  } else {
+    S.vel.y += GRAVITY * dt;
+  }
+
+  S.pos.addScaledVector(S.vel, dt);
+  S.pos.x = Math.max(-68, Math.min(68, S.pos.x));
+  S.pos.z = Math.max(-68, Math.min(68, S.pos.z));
+  if (S.pos.y < -10) bail();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+const _euler = new THREE.Euler(0,0,0,'YXZ');
+const _camTgt = new THREE.Vector3();
+
+function renderFrame() {
+  bikeGroup.position.copy(S.pos);
+  _euler.set(S.flipRot, S.yaw, 0);
+  bikeGroup.quaternion.setFromEuler(_euler);
+
+  bikeBar.rotation.y = S.barspinRot;
+  bikeBar.position.y = 0.95 + (S.noHandsTime > .1 ? Math.min(1, S.noHandsTime*2)*.45 : 0);
+
+  // Wheel spin
+  const spin = S.speed * .05;
+  frontWheel.rotation.x += spin;
+  rearWheel.rotation.x  += spin;
+
+  // Camera follow
+  _camTgt.set(
+    S.pos.x + Math.sin(S.yaw)*7.5,
+    S.pos.y + 3.8,
+    S.pos.z + Math.cos(S.yaw)*7.5
+  );
+  camera.position.lerp(_camTgt, .1);
+  camera.lookAt(S.pos.x, S.pos.y+1.2, S.pos.z);
+
+  renderer.render(scene, camera);
+}
+
+// ── Loop ──────────────────────────────────────────────────────────────────────
+let lastT = performance.now();
+(function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min((now-lastT)/1000, .05);
+  lastT = now;
+  update(dt);
+  renderFrame();
+  if (trickTimer > 0) {
+    trickTimer -= dt;
+    if (trickTimer <= 0) document.getElementById('trick-val').textContent='';
+  }
+})(performance.now());
+
+addEventListener('resize', () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+buildPark();
+hudScore();
+</script>
+</body>
+</html>
