@@ -104,7 +104,7 @@ const PALETTE = [
 // host and runs the simulation (bots, tagging, timer); everyone else sends their own position/shots to the host
 // and renders its snapshots. With no server configured the game runs offline with bots filling every slot.
 const QS = new URLSearchParams(location.search);
-const DEFAULT_SERVER = '';   // put your deployed game server here, e.g. 'wss://hide-and-seek.example.com'
+const DEFAULT_SERVER = 'wss://hide-and-seek-server.fly.dev';   // put your deployed game server here, e.g. 'wss://hide-and-seek.example.com'
 const SERVER_URL = QS.get('server') || window.HS_SERVER || DEFAULT_SERVER;
 const LOBBY_WAIT_MS = 10000;
 const Net = {
@@ -115,7 +115,7 @@ const Net = {
     try { this.ws = new WebSocket(SERVER_URL.replace(/\/$/, '') + '/?room=' + encodeURIComponent(QS.get('room') || 'public')); } catch (e) { return; }
     this.ws.onopen = () => { this.connected = true; this.send({ type: 'join', hex: player.hex, shape: player.shape }); };
     this.ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (err) { return; } onNet(m); };
-    this.ws.onclose = () => { const was = this.connected; this.connected = false; this.lobby.endsAt = 0; if (was) onNetClosed(); };
+    this.ws.onclose = () => { const was = this.connected; if (!was) this.failed = true; this.connected = false; this.lobby.endsAt = 0; if (was) onNetClosed(); };
   },
   send(o) { if (this.connected && this.ws.readyState === 1) this.ws.send(JSON.stringify(o)); },
 };
@@ -1410,7 +1410,7 @@ function tickLobby(now) {
     const busy = Net.lobby.phase === 'playing';
     btn.disabled = busy;
     wait.textContent = Net.notice || (busy ? 'A round is in progress — you can join the next one.' : `Online: ${Net.lobby.players.length} player${Net.lobby.players.length === 1 ? '' : 's'} in this room. Send friends this page's link to play together.`);
-  } else wait.textContent = Net.notice || (SERVER_URL ? 'Connecting to the game server…' : 'Offline: no game server is set, so bots fill every spot.');
+  } else wait.textContent = Net.notice || (SERVER_URL && !Net.failed ? 'Connecting to the game server…' : SERVER_URL ? 'Offline: the game server is unreachable right now, so bots fill every spot.' : 'Offline: no game server is set, so bots fill every spot.');
 }
 $('startBtn').onclick = () => {
   $('startBtn').disabled = true;
