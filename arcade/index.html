@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcade</title>
+<style>
+  :root {
+    --bg1: #1a1035;
+    --bg2: #0d0620;
+    --neon-pink: #ff2fd6;
+    --neon-cyan: #2ff6ff;
+    --neon-yellow: #ffe62f;
+    --card-bg: rgba(255,255,255,0.04);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: radial-gradient(circle at 50% 0%, var(--bg1), var(--bg2) 70%);
+    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+    color: #fff;
+    overflow-x: hidden;
+  }
+  body {
+    padding: 40px 32px 64px;
+    position: relative;
+  }
+
+  h1.title {
+    text-align: center;
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    letter-spacing: 6px;
+    margin: 0 0 8px;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow:
+      0 0 6px var(--neon-cyan),
+      0 0 18px var(--neon-cyan),
+      0 0 40px var(--neon-pink);
+  }
+  p.subtitle {
+    text-align: center;
+    margin: 0 0 40px;
+    color: #b9a8ff;
+    letter-spacing: 2px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+  }
+
+  /* Trophy case - top right */
+  .trophy-case {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 50;
+    background: linear-gradient(160deg, rgba(40,20,70,0.9), rgba(15,8,35,0.92));
+    border: 2px solid var(--neon-yellow);
+    border-radius: 14px;
+    padding: 12px 16px 14px;
+    box-shadow:
+      0 0 10px rgba(255,230,47,0.5),
+      0 0 30px rgba(255,47,214,0.25),
+      inset 0 0 20px rgba(255,230,47,0.05);
+    min-width: 210px;
+    backdrop-filter: blur(4px);
+  }
+  .trophy-case h2 {
+    margin: 0 0 10px;
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 8px rgba(255,230,47,0.7);
+  }
+  .trophy-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 4px;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+  .trophy-entry:hover {
+    background: rgba(255,255,255,0.06);
+  }
+  .trophy-entry + .trophy-entry {
+    margin-top: 4px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 8px;
+  }
+  .trophy-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 6px rgba(255,230,47,0.8));
+    flex-shrink: 0;
+  }
+  .trophy-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+  .trophy-game {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #fff;
+  }
+  .trophy-label {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--neon-cyan);
+  }
+  .trophy-score {
+    font-size: 0.7rem;
+    color: #ffd9f4;
+    font-variant-numeric: tabular-nums;
+  }
+  .trophy-score b {
+    color: var(--neon-yellow);
+    font-size: 0.85rem;
+  }
+
+  /* Game grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 22px;
+    text-decoration: none;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 24px rgba(47,246,255,0.25);
+  }
+  .card .emoji {
+    font-size: 2.4rem;
+    display: block;
+    margin-bottom: 10px;
+  }
+  .card h3 {
+    margin: 0 0 6px;
+    letter-spacing: 1px;
+  }
+  .card p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #b9a8ff;
+  }
+
+  @media (max-width: 520px) {
+    .trophy-case {
+      position: static;
+      margin: 0 auto 28px;
+      max-width: 260px;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div class="trophy-case">
+    <h2>🏆 Trophy Case</h2>
+    <div class="trophy-entry">
+      <span class="trophy-icon">🥇</span>
+      <div class="trophy-info">
+        <span class="trophy-game">Flappy Bird</span>
+        <span class="trophy-label">1st Place</span>
+        <span class="trophy-score">Score: <b>36</b></span>
+      </div>
+    </div>
+    <div class="trophy-entry">
+      <span class="trophy-icon">🏆</span>
+      <div class="trophy-info">
+        <span class="trophy-game">Pong</span>
+        <span class="trophy-label">High Score</span>
+        <span class="trophy-score">Score: <b>58</b></span>
+      </div>
+    </div>
+  </div>
+
+  <h1 class="title">Arcade</h1>
+  <p class="subtitle">Choose your game</p>
+
+  <div class="grid">
+    <a class="card" href="hide-and-seek.html">
+      <span class="emoji">🔫</span>
+      <h3>Hide &amp; Seek</h3>
+      <p>Hide, seek and splash with a water gun.</p>
+    </a>
+  </div>
+
+</body>
+</html>
