@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Sunshine Heist - Florida</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--pink:#ff4fa3;--teal:#27e1d0;--sun:#ffd23f;--ink:#0b0f1a;--panel:rgba(10,14,28,.72)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:"Avenir Next","Trebuchet MS",system-ui,sans-serif;color:#fff;user-select:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hud{position:fixed;pointer-events:none;text-shadow:0 2px 4px #000a}
+#stats{top:14px;right:18px;text-align:right}
+#money{font-size:34px;font-weight:800;color:#7dff8a;letter-spacing:1px}
+#clock{font-size:15px;opacity:.9;margin-top:2px}
+#stars{font-size:30px;letter-spacing:4px;margin-top:4px;color:#555}
+#stars .on{color:#ffd23f;text-shadow:0 0 10px #ffb300}
+#stars.flash .on{animation:fl .4s infinite alternate}
+@keyframes fl{from{opacity:1}to{opacity:.25}}
+#mapwrap{left:18px;bottom:18px;width:190px}
+#mini{width:190px;height:190px;border-radius:50%;border:3px solid #fff8;background:#123;box-shadow:0 4px 18px #0009}
+.bars{margin-top:8px}
+.bar{height:11px;background:#0008;border-radius:6px;margin-top:5px;overflow:hidden;border:1px solid #fff3}
+.bar i{display:block;height:100%;width:100%}
+#hp i{background:linear-gradient(90deg,#ff3b5c,#ff7a5c)}
+#ar i{background:linear-gradient(90deg,#2aa7ff,#7be0ff)}
+#weapon{right:18px;bottom:18px;text-align:right}
+#wname{font-size:18px;font-weight:700;color:var(--sun)}
+#wammo{font-size:36px;font-weight:800}
+#wammo small{font-size:18px;opacity:.7}
+#speedo{right:18px;bottom:110px;font-size:40px;font-weight:800;color:var(--teal);display:none}
+#speedo small{font-size:15px;opacity:.8}
+#cross{left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;display:none}
+#cross:before,#cross:after{content:"";position:absolute;background:#fff;box-shadow:0 0 3px #000}
+#cross:before{left:12px;top:0;width:2px;height:26px;opacity:.0}
+#cross:after{top:12px;left:0;height:2px;width:26px;opacity:.0}
+#cross b{position:absolute;left:10px;top:10px;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 4px #000;transition:background .1s}
+#cross.hot b{background:#ff4040}
+#prompt{left:50%;bottom:22%;transform:translateX(-50%);font-size:20px;font-weight:700;background:var(--panel);padding:8px 18px;border-radius:30px;border:1px solid #fff4;display:none;white-space:nowrap}
+#prompt kbd,.kbd{background:var(--sun);color:#000;padding:1px 8px;border-radius:5px;font-weight:800;font-family:inherit}
+#prog{left:50%;bottom:30%;transform:translateX(-50%);width:300px;display:none}
+#prog .bar{height:16px}#prog i{background:linear-gradient(90deg,var(--pink),var(--sun));width:0}
+#prog div{text-align:center;font-weight:700;margin-bottom:2px}
+#msg{left:50%;bottom:11%;transform:translateX(-50%);text-align:center;font-size:19px;font-weight:700}
+#msg div{background:var(--panel);padding:5px 14px;border-radius:8px;margin-top:5px;animation:pop .2s}
+@keyframes pop{from{transform:scale(.8);opacity:0}}
+#target{left:50%;top:50%;margin:24px 0 0 22px;font-size:14px;background:var(--panel);padding:5px 10px;border-radius:6px;display:none;max-width:280px}
+#target b{color:var(--sun)}
+#log{left:18px;top:14px;width:380px;font-size:13px;line-height:1.35}
+#log div{background:var(--panel);padding:5px 10px;border-radius:6px;margin-bottom:5px;border-left:3px solid var(--teal);animation:pop .25s;transition:opacity 1s}
+#log div.dead{border-left-color:#ff3b5c}#log div.crime{border-left-color:var(--sun)}#log div.money{border-left-color:#7dff8a}
+#bubbles{position:fixed;inset:0;pointer-events:none}
+#bubbles div{position:absolute;transform:translate(-50%,-100%);background:#fffe;color:#111;font-size:13px;font-weight:600;padding:3px 9px;border-radius:10px;white-space:nowrap;display:none}
+#hint{left:50%;top:12px;transform:translateX(-50%);font-size:14px;background:var(--panel);padding:6px 14px;border-radius:20px;display:none}
+#over{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#300a;z-index:20;pointer-events:none}
+#over h1{font-size:90px;letter-spacing:6px;color:#ff4c5c;text-shadow:0 0 30px #f00}
+#over p{font-size:22px;margin-top:8px}
+#menu,#shop,#fullmap,#pause{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center}
+#menu{background:linear-gradient(180deg,#ff7e5faa,#6a2c91cc 55%,#0b1d3ae6),radial-gradient(circle at 70% 20%,#ffe9a0,transparent 40%);flex-direction:column;text-align:center}
+#menu h1{font-size:92px;font-style:italic;letter-spacing:4px;background:linear-gradient(180deg,#fff3a0,#ff4fa3);-webkit-background-clip:text;color:transparent;filter:drop-shadow(0 6px 0 #0006)}
+#menu h2{font-size:22px;letter-spacing:12px;color:var(--teal);margin-bottom:22px}
+#menu .box{background:var(--panel);border-radius:16px;padding:18px 28px;max-width:860px;font-size:15px;line-height:1.7;text-align:left;display:grid;grid-template-columns:1fr 1fr;gap:2px 40px;border:1px solid #fff3}
+.btn{display:inline-block;margin:18px 8px 0;padding:13px 34px;font-size:22px;font-weight:800;border:0;border-radius:40px;cursor:pointer;background:linear-gradient(90deg,var(--pink),var(--sun));color:#111;font-family:inherit;pointer-events:auto}
+.btn:hover{filter:brightness(1.15);transform:scale(1.04)}.btn.alt{background:#fff;}.btn.small{font-size:15px;padding:7px 16px;margin:4px}
+.btn[disabled]{opacity:.35;pointer-events:none}
+#shop{display:none;background:#000a}
+#shop .win{width:min(900px,94vw);max-height:90vh;overflow:auto;background:#12162a;border:2px solid var(--sun);border-radius:14px;padding:20px 26px}
+#shop h2{color:var(--sun);font-size:30px}
+.tabs{margin:10px 0 14px}.tabs .btn{margin:0 6px 0 0;font-size:15px;padding:7px 16px}.tabs .on{outline:3px solid #fff}
+.row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #fff2}
+.row:hover{background:#fff1}.row b{font-size:17px}.row span{opacity:.75;font-size:13px;display:block}
+.row .price{color:#7dff8a;font-weight:800;margin-right:14px;font-size:18px}
+#fullmap{display:none;background:#000c}
+#fullmap canvas{height:min(92vh,880px);aspect-ratio:780/880;width:auto;max-width:96vw;border:3px solid #fff;border-radius:10px;background:#123}
+#pause{display:none;background:#000a;flex-direction:column;text-align:center}
+#pause h1{font-size:60px}
+#flash{position:fixed;inset:0;background:#f00;opacity:0;pointer-events:none;transition:opacity .25s}
+#scope{position:fixed;inset:0;display:none;pointer-events:none;z-index:3;background:radial-gradient(circle at center,transparent 0,transparent 30vmin,#000 30.4vmin)}#scope:before,#scope:after{content:'';position:absolute;background:#000c}#scope:before{left:50%;top:0;bottom:0;width:2px}#scope:after{top:50%;left:0;right:0;height:2px}
+#vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,#000a);opacity:.7}
+#rob{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 120px #f00;opacity:0}
+
+/* ---- story UI ---- */
+#bars i{position:fixed;left:0;right:0;height:0;background:#000;z-index:8;transition:height .7s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+#bars i.t{top:0}#bars i.b{bottom:0}
+body.cut #bars i{height:13vh}
+body.cut .hud,body.cut #vig{display:none!important}
+#cut{position:fixed;inset:0;z-index:9;display:none;pointer-events:none}
+body.cut #cut{display:block}
+#dlg{position:absolute;left:50%;bottom:2.2vh;transform:translateX(-50%);width:min(860px,92vw);display:none;gap:16px;align-items:center;color:#fff;text-shadow:0 2px 6px #000}
+#dlg.on{display:flex;animation:rise .25s}
+@keyframes rise{from{opacity:0;transform:translate(-50%,10px)}}
+#port,#cport{border-radius:14px;border:3px solid var(--c,#fff);background:#0b0f1a;image-rendering:pixelated;flex:none;box-shadow:0 0 18px var(--c,#fff)}
+#port{width:96px;height:96px}
+#dlg .tx{flex:1;min-height:80px}
+#spk{font-size:17px;letter-spacing:3px;text-transform:uppercase;color:var(--c,#fff)}
+#dtx{font-size:22px;line-height:1.35;margin-top:4px;font-weight:600;min-height:60px}
+#adv{position:absolute;right:6px;bottom:-4px;font-size:18px;animation:fl .6s infinite alternate}
+#skip{position:absolute;right:20px;top:calc(13vh + 10px);font-size:13px;opacity:.7;text-shadow:0 1px 3px #000}
+#choice{position:absolute;left:50%;top:38%;transform:translateX(-50%);display:flex;flex-direction:column;gap:12px;align-items:center;pointer-events:auto}
+#choice h2{font-size:26px;text-shadow:0 2px 8px #000;max-width:700px;text-align:center}
+#choice .btn{margin:0;font-size:20px;min-width:360px}
+#mission{right:18px;top:128px;width:290px;text-align:right}
+#mission.off{display:none}
+#mtitle{font-size:12px;letter-spacing:3px;color:var(--pink);font-weight:800}
+#mobj{font-size:17px;font-weight:700;background:var(--panel);padding:8px 12px;border-radius:8px;margin-top:3px;border-right:4px solid var(--sun);text-align:left}
+#msub{font-size:13px;opacity:.9;margin-top:4px}
+#card{position:fixed;inset:0;z-index:12;display:none;align-items:center;justify-content:center;flex-direction:column;pointer-events:none;text-align:center;text-shadow:0 4px 18px #000}
+#card.on{display:flex;animation:cardin 3.2s forwards}
+@keyframes cardin{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
+#cardk{letter-spacing:10px;color:var(--teal);font-weight:800;font-size:16px}
+#card h1{font-size:76px;font-style:italic;background:linear-gradient(180deg,#fff3a0,#ff4fa3);-webkit-background-clip:text;color:transparent;filter:drop-shadow(0 5px 0 #0008);padding:0 20px}
+#card p{font-size:20px;opacity:.9;margin-top:6px;letter-spacing:2px}
+#passed{position:fixed;inset:0;z-index:14;display:none;align-items:center;justify-content:center;flex-direction:column;pointer-events:none;text-align:center;background:radial-gradient(ellipse at center,#0006,#000a)}
+#passed.on{display:flex;animation:cardin 5s forwards}
+#passed h1{font-size:84px;font-style:italic;letter-spacing:6px;color:var(--sun);text-shadow:0 0 30px #ff9a00,0 6px 0 #0008}
+#passed.fail h1{color:#ff4c5c;text-shadow:0 0 30px #f00}
+#passed h2{font-size:26px;margin-top:6px}#passed p{font-size:20px;margin-top:10px;color:#7dff8a}
+#chat{position:fixed;left:50%;bottom:19%;transform:translateX(-50%);display:none;gap:12px;align-items:center;background:var(--panel);padding:8px 16px 8px 8px;border-radius:14px;border:1px solid #fff3;max-width:min(640px,90vw);pointer-events:none}
+#chat.on{display:flex;animation:pop .2s}
+#cport{width:64px;height:64px}
+#cspk{font-size:12px;letter-spacing:2px;color:var(--c,#fff);text-transform:uppercase}
+#ctx{font-size:16px;font-weight:600}
+#journal{position:fixed;inset:0;z-index:15;display:none;background:#000c;align-items:center;justify-content:center}
+#journal .win{width:min(980px,95vw);max-height:90vh;overflow:auto;background:#12162a;border:2px solid var(--teal);border-radius:14px;padding:20px 28px;display:grid;grid-template-columns:1.2fr 1fr;gap:20px 34px}
+#journal h2{color:var(--teal);font-size:24px;letter-spacing:3px;grid-column:1/3}
+#journal h3{color:var(--sun);font-size:15px;letter-spacing:2px;margin:10px 0 6px}
+#journal .ch{padding:6px 10px;border-left:3px solid #fff3;margin-bottom:6px;font-size:14px}
+#journal .ch.done{border-color:#7dff8a}#journal .ch.now{border-color:var(--sun);background:#fff1}
+#journal .ch b{display:block;font-size:15px}
+#journal .person{display:flex;gap:10px;align-items:center;margin-bottom:8px;font-size:13px}
+#journal .person canvas{width:48px;height:48px;border-radius:8px;image-rendering:pixelated}
+#journal .note{font-size:13px;opacity:.9;margin-bottom:5px;padding-left:8px;border-left:2px solid var(--pink)}
+
+/* ---- minimal HUD overrides ---- */
+.hud{transition:opacity .5s}
+#stats{top:12px;right:16px}#money{font-size:22px;letter-spacing:.5px}#clock{font-size:12px;margin-top:0}#stars{font-size:18px;margin-top:0;letter-spacing:2px}
+#mapwrap{left:14px;bottom:14px;width:128px}#mini{width:128px;height:128px;border-width:2px;opacity:.9}
+.bars{margin-top:5px;transition:opacity .6s}.bar{height:5px;margin-top:3px}
+#weapon{right:16px;bottom:14px;transition:opacity .5s}#wname{font-size:13px}#wammo{font-size:26px}#wammo small{font-size:13px}
+#speedo{font-size:26px;bottom:60px}#speedo small{font-size:11px}
+#log{left:14px;top:12px;width:290px;font-size:12px}#log div{padding:3px 8px;margin-bottom:3px;border-left-width:2px}
+#msg{font-size:14px;bottom:9%}#msg div{padding:3px 10px;margin-top:3px}
+#mission{top:80px;width:230px}#mtitle{font-size:10px}#mobj{font-size:14px;padding:5px 9px;border-right-width:3px}#msub{font-size:12px}
+#prompt{font-size:16px;padding:5px 14px;bottom:20%}
+#target{font-size:12px;padding:3px 8px}
+#cross b{width:4px;height:4px;left:11px;top:11px;opacity:.9}
+body.nohud .hud{opacity:0!important}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="scope"></div><div id="vig"></div><div id="flash"></div><div id="rob"></div>
+<div id="bubbles"></div>
+<div class="hud" id="stats"><div id="money">$0</div><div id="clock"></div><div id="stars"></div></div>
+<div class="hud" id="log"></div>
+<div class="hud" id="hint"></div>
+<div class="hud" id="mapwrap"><canvas id="mini" width="380" height="380"></canvas><div class="bars"><div class="bar" id="hp"><i></i></div><div class="bar" id="ar"><i></i></div></div></div>
+<div class="hud" id="weapon"><div id="wname"></div><div id="wammo"></div></div>
+<div class="hud" id="speedo"><span id="spd">0</span> <small>MPH</small></div>
+<div class="hud" id="cross"><b></b></div>
+<div class="hud" id="target"></div>
+<div class="hud" id="prompt"></div>
+<div class="hud" id="prog"><div id="progt"></div><div class="bar"><i></i></div></div>
+<div class="hud" id="msg"></div>
+<div id="over"><h1 id="overh">WASTED</h1><p id="overp"></p></div>
+<div id="fullmap"><canvas id="fm" width="780" height="880"></canvas></div>
+<div id="shop"><div class="win"><h2 id="shopname"></h2><div id="shopcash"></div><div class="tabs" id="shoptabs"></div><div id="shoplist"></div><button class="btn alt small" id="shopclose">Leave (Esc)</button></div></div>
+<div id="pause"><h1>PAUSED</h1><p>Click to resume</p><div><button class="btn" id="resume">Resume</button><button class="btn alt" id="savebtn">Save</button></div></div>
+<div id="bars"><i class="t"></i><i class="b"></i></div>
+<div id="cut"><div id="dlg"><canvas id="port" width="48" height="48"></canvas><div class="tx"><b id="spk"></b><p id="dtx"></p></div><span id="adv">&#9660;</span></div><div id="choice"></div><div id="skip">Space / click: next &nbsp;·&nbsp; Backspace: skip scene</div></div>
+<div class="hud off" id="mission"><div id="mtitle"></div><div id="mobj"></div><div id="msub"></div></div>
+<div id="card"><div id="cardk"></div><h1 id="cardh"></h1><p id="cardp"></p></div>
+<div id="passed"><h1 id="passh"></h1><h2 id="passt"></h2><p id="passp"></p></div>
+<div id="chat"><canvas id="cport" width="32" height="32"></canvas><div><b id="cspk"></b><div id="ctx"></div></div></div>
+<div id="journal"><div class="win"><h2>JOURNAL &middot; <span style="font-size:13px;opacity:.7">J to close</span></h2><div id="jl"></div><div id="jr"></div></div></div>
+<div id="menu">
+ <h1>SUNSHINE HEIST</h1><h2>F L O R I D A</h2>
+ <div class="box">
+  <div><span class="kbd">W A S D</span> move &nbsp; <span class="kbd">Shift</span> sprint &nbsp; <span class="kbd">Space</span> jump</div>
+  <div><span class="kbd">Mouse</span> aim at the cursor (screen edge turns) &nbsp; <span class="kbd">LMB</span> shoot &nbsp; <span class="kbd">RMB</span> aim</div>
+  <div><span class="kbd">F</span> enter / exit / carjack vehicle</div>
+  <div><span class="kbd">E</span> interact &middot; hold to rob a register &nbsp; <span class="kbd">X</span> ski mask &nbsp; <span class="kbd">C</span> dive roll</div>
+  <div><span class="kbd">G</span> grab / release a hostage</div>
+  <div><span class="kbd">R</span> reload &nbsp; <span class="kbd">1-5</span> / <span class="kbd">wheel</span> / <span class="kbd">Q</span> weapons &nbsp; <span class="kbd">T</span> talk</div>
+  <div>Driving: <span class="kbd">W/S</span> gas/brake &nbsp; <span class="kbd">A/D</span> steer &nbsp; <span class="kbd">Space</span> handbrake</div>
+  <div><span class="kbd">M</span> map &nbsp; <span class="kbd">J</span> journal &nbsp; <span class="kbd">B</span> effects &nbsp; <span class="kbd">F1</span> hide HUD &nbsp; <span class="kbd">Tab</span> show info &nbsp; <span class="kbd">Esc</span> pause &nbsp; <span class="kbd">H</span> horn</div>
+  <div style="grid-column:1/3;opacity:.85">Rob gas stations and banks, steal cars, trade at pawn shops, hold hostages, and outrun the law across a sun-soaked Florida. Everyone you meet has a name, a job, a home and a daily routine. Choose your crimes carefully.</div>
+ </div>
+ <div><button class="btn" id="newgame">New Game</button><button class="btn alt" id="contgame">Continue</button></div>
+ <p id="loadmsg" style="margin-top:14px;opacity:.8">Loading Florida...</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="js/core.js"></script>
+<script src="js/world.js"></script>
+<script src="js/humans.js"></script>
+<script src="js/vehicles.js"></script>
+<script src="js/carmodels.js"></script>
+<script src="js/gunmodels.js"></script>
+<script src="js/npcs.js"></script>
+<script src="js/player.js"></script>
+<script src="js/police.js"></script>
+<script src="js/shops.js"></script>
+<script src="js/props.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/weapons.js"></script>
+<script src="js/story.js"></script>
+<script src="js/missions.js"></script>
+<script src="js/extras.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/post.js"></script>
+<script src="js/main.js"></script>
+</body></html>
