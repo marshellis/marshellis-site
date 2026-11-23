@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="gridrush-build" content="a518184-20261123T064755Z">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no">
+    <title>GridRush</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #04050b; }
+      body { display: flex; align-items: center; justify-content: center; font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; }
+      #unity-canvas { display: block; width: 100vw; height: 100vh; background: #04050b; outline: none; }
+      #back {
+        position: fixed; top: 8px; left: 10px; z-index: 2;
+        padding: 3px 10px; border-radius: 999px;
+        font-size: 12px; letter-spacing: 1px; color: #b9c3ff; text-decoration: none;
+        background: rgba(4, 5, 11, 0.55); border: 1px solid rgba(255, 255, 255, 0.15);
+        opacity: 0.7; transition: opacity 0.2s, border-color 0.2s;
+      }
+      #back:hover, #back:focus { opacity: 1; color: #fff; border-color: #2ff6ff; }
+      #loading {
+        position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1;
+        width: min(320px, 60vw); text-align: center;
+        color: #b9c3ff; font-size: 13px; letter-spacing: 4px; text-transform: uppercase;
+      }
+      #loading .bar { height: 4px; margin-top: 12px; border-radius: 2px; overflow: hidden; background: rgba(255, 255, 255, 0.1); }
+      #loading .fill { width: 0; height: 100%; background: #2ff6ff; box-shadow: 0 0 10px #2ff6ff; transition: width 0.2s; }
+    </style>
+  </head>
+  <body>
+    <a id="back" href="../">&larr; Arcade</a>
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="loading">GridRush<div class="bar"><div class="fill"></div></div></div>
+    <script src="Build/WebGL.loader.js"></script>
+    <script>
+      // The canvas fills the window, but keeps its aspect between 4:3 and 21:9; the rest stays the page's dark colour.
+      var canvas = document.querySelector("#unity-canvas");
+      var MinAspect = 4 / 3, MaxAspect = 21 / 9;
+      function fit() {
+        var w = window.innerWidth, h = window.innerHeight, aspect = w / h;
+        if (aspect > MaxAspect) w = Math.round(h * MaxAspect);
+        else if (aspect < MinAspect) h = Math.round(w / MinAspect);
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+      }
+      window.addEventListener("resize", fit);
+      fit();
+
+      var loading = document.querySelector("#loading");
+      createUnityInstance(canvas, {
+        arguments: [],
+        dataUrl: "Build/WebGL.data.unityweb",
+        frameworkUrl: "Build/WebGL.framework.js.unityweb",
+        codeUrl: "Build/WebGL.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "GridRush",
+        productName: "GridRush",
+        productVersion: "0.1.0",
+      }, function (progress) {
+        loading.querySelector(".fill").style.width = 100 * progress + "%";
+      }).then(function () {
+        loading.remove();
+        canvas.focus();
+      }).catch(function (message) {
+        alert(message);
+      });
+    </script>
+  </body>
+</html>
